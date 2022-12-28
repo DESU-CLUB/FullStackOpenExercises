@@ -1,0 +1,27 @@
+browser -> server: HTTP POST https://studies.cs.helsinki.fi/exampleapp/new-note
+
+note over server:
+server receives data from browser
+adds to array called notes
+server then redirects browser to https://studies.cs.helsinki.fi/exampleapp/notes once done
+
+
+browser -> server: HTTP GET https://studies.cs.helsinki.fi/exampleapp/notes
+server-->browser: HTML-code
+browser->server: HTTP GET https://studies.cs.helsinki.fi/exampleapp/main.css
+server-->browser: main.css
+browser->server: HTTP GET https://studies.cs.helsinki.fi/exampleapp/main.js
+server-->browser: main.js
+
+note:
+browswer executes js code
+request made to get data.json
+end note
+
+browser -> server: HTTP GET https://studies.cs.helsinki.fi/exampleapp/data.json
+server --> browser json string
+
+note:
+event handler is fired, causes creation of a ul with json content as li elements
+notes is displayed
+end note
