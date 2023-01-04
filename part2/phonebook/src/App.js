@@ -1,40 +1,82 @@
 import {useState,useEffect} from 'react'
-import axios from 'axios'
+import numberService from './services/numbers'
+import Notification from './services/notification'
 
 const App = () => {
   const [persons,setPersons] = useState([])
   const [newName, setNewName] = useState('')
   const[newNumber, setNewNumber] = useState('')
   const [newFilter, setNewFilter] = useState('')
-useEffect(
-() =>{
-console.log('effect')
-axios.get('http://localhost:3001/persons')
-.then(response =>{
-  console.log(response.data)
-  setPersons(response.data)
-  
+  const [message,setMessage] = useState(null)
+  const [messageType,setMessageType] = useState(true)
+
+  useEffect(
+  () =>{
+  numberService.getAll()
+  .then(response =>{
+  setPersons(response)
+    })
+  .catch(err => alert('Error!'))
+  },[])
+
+  const deleteItem = (id) =>{
+    console.log(`Item with id of ${id} to be deleted`)
+    numberService.del(id)
+    .then(response => {
+      setPersons(persons.filter(value => value.id !== id))
   })
-},[])
-  
+    .catch(error=>{
+      error = persons.find(value => value.id === id)
+      setMessageType(true)
+      setMessage(`Information of ${error.name} does not exist`)
+      setTimeout(()=>{setMessage(null)},5000)
+      setPersons(persons.filter(value => value.id !== id))
+      console.log(persons)
+    })
+  }
 
   const submitName = (event) =>{
     event.preventDefault()
     if (newName === '' || newNumber === ''){
       alert('One or more fields left blank')
     }
-    else if (persons.some(element => element.name === newName || element.phoneNumber === newNumber)){
-      alert(newName+' already registered!')
+    else if (persons.some(element => element.number === newNumber)){
+      alert(`Number ${newNumber} already exists.`)
+    }
+    else if (persons.some(element => element.name === newName)){
+      if (window.confirm(newName+' already registered!Would you like to update his/her number?')){
+        const person = persons.find(element => element.name === newName)
+        const changedPerson = {...person, number:newNumber}
+        console.log(changedPerson)
+        numberService.update(changedPerson.id,changedPerson)
+        .then(response=>{
+          setPersons(persons.map(p => p.name!==newName?p:response))
+          setNewName('')
+          setNewNumber ('')
+        })
+        .catch(
+          err=> {
+            setMessageType(true)
+            setMessage(`Information of ${changedPerson.name} does not exist`)
+            setTimeout(()=>{setMessage(null)},5000)})
+      }
     }
     else{
-      setPersons(persons.concat({name: newName, number: newNumber}))
-      setNewName('')
-      setNewNumber('')
-
+      numberService.create({name:newName,number:newNumber})
+      .then(response =>{
+        console.log(response)
+        setMessageType(false)
+        setMessage(`Information of ${newName} added`)
+        setTimeout(()=>{setMessage(null)},5000)
+        setPersons(persons.concat(response))
+        setNewName('')
+        setNewNumber ('')
+      })
+      .catch(err =>{alert('Error!')})
     }
   }
   const filtered = persons.filter(element=> element.name.toLowerCase().includes(newFilter.toLowerCase(),0))
-
+  console.log(filtered)
 
   return (
     <div>
@@ -42,16 +84,17 @@ axios.get('http://localhost:3001/persons')
       <Filter value = {newFilter} setNewFilter = {setNewFilter}/>
       <h2>Add a new</h2>
       <Form newName = {newName} newNumber = {newNumber} setNewName = {setNewName} setNewNumber = {setNewNumber} submitName = {submitName}/>
-      <Entries filtered = {filtered}/>
+      <Notification message = {message} error = {messageType}/>
+      <Entries filtered = {filtered} deleteItem = {deleteItem}/>
     </div>
   )
 }
 
-const Entries = ({filtered}) =>{
+const Entries = ({filtered,deleteItem}) =>{
   return(
     <div>
     <h2>Numbers</h2>
-    {filtered.map(value => <Entry key = {value.name} name =  {value.name} number ={value.number}/>)}
+    {filtered.map(value => <Entry key = {value.id} value = {value} deleteItem = {deleteItem}/>)}
     </div>
   )
 }
@@ -64,9 +107,10 @@ const Filter = ({value,setNewFilter})=>{
   )
 }
 
-const Entry =({name,number}) =>{
+const Entry =({value,deleteItem}) =>{
+  const {id,name,number} = value
   return (
-    <p>{name} {number}</p>
+    <p>{name} {number} <button onClick = {() => deleteItem(id)}>Delete</button></p>
   )
 }
 
