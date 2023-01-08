@@ -72,9 +72,13 @@ const App = () => {
         setNewName('')
         setNewNumber ('')
       })
-      .catch(err =>{alert('Error!')})
+      .catch(err =>{
+        setMessageType(true)
+        setMessage(err.response.data.error)
+        setTimeout(()=>{setMessage(null)},5000)
+      })}
     }
-  }
+
   const filtered = persons.filter(element=> element.name.toLowerCase().includes(newFilter.toLowerCase(),0))
   console.log(filtered)
 

@@ -22,5 +22,5 @@ const del = (id) =>{
     const response = axios.delete(`${baseUrl}/${id}`)
     return response
 }
-
-export default {getAll,create,update,del}
+const services = {getAll,create,update,del}
+export default services;
