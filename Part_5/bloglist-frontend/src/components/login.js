@@ -1,48 +1,75 @@
-import { useState } from 'react'
-import loginService from '../services/loginService'
-import blogService from '../services/blogs'
+import { useState } from "react";
+import loginService from "../services/loginService";
+import { useDispatch } from "react-redux";
+import { makeMessage } from "../reducers/messageReducer";
+import { addName } from "../reducers/userReducer";
+import helper from "../services/blogs"
+import { useNavigate } from "react-router-dom";
+import { Form, Input, Button, Space } from "antd";
+const LoginForm = () => {
+  const navigate = useNavigate()
+  const [password, setPass] = useState("");
+  const [username, setUsername] = useState("");
+  const dispatch = useDispatch()
 
-const LoginForm = ({ setUser,setMsg, setIsError }) => {
-  const [password,setPass] = useState('')
-  const [username,setUsername] = useState('')
-
-  const submitForm = async (event) => {
-    event.preventDefault()
-    try{
-      const signIn = await loginService.login({ username,password })
-      setUsername('')
-      setPass('')
-      setUser(signIn.data.username)
-      console.log(signIn)
-      setMsg(`${signIn.data.username} signed in`)
-      setIsError(false)
-      setTimeout(() => {setMsg('')},5000)
+  const submitForm = async () => {
+    try {
+      const signIn = await loginService.login({ username, password });
+      setUsername("");
+      setPass("");
+      dispatch(addName(signIn.data.username))
+      console.log(signIn);
+      dispatch(makeMessage({ data: `${signIn.data.username} signed in`, error: false }));
 
 
-      blogService.setToken(signIn.data.token)
-      window.localStorage.setItem('loggedUser',JSON.stringify(signIn.data))
+      helper.setToken(signIn.data.token)
+      window.localStorage.setItem("loggedUser", JSON.stringify(signIn.data));
+      navigate('/')
+    } catch (exception) {
+      console.log(exception);
+      dispatch(makeMessage({ data: `Invalid name/password`, error: true }));
+
     }
-    catch(exception){
-      console.log(exception)
-      setMsg('Invalid name/password')
-      setIsError(true)
-      setTimeout(() => {setMsg('')},5000)
-    }
+  };
 
+  return (
+    <div>
+      <Form
+        className="login" onFinish={submitForm}
+        labelCol={{ span: 3 }}
+        wrapperCol={{ span: 16 }}
+        style={{ maxWidth: 600, maxHeight:3000, height: 600  }}
+      >
+        <Space direction = 'vertical' style = {{width: '100%'}}> 
+        <Form.Item label="Name" name="name" rules={[{ required: true, message: "Please input name!" }]}>
+          <Input
+            id="username"
+            type="text"
+            value={username}
+            name="Username"
+            onChange={({ target }) => {
+              setUsername(target.value);
+            }}
+          ></Input>
+        </Form.Item>
+        <Form.Item label="Password" name="Password" rules={[{ required: true, message: "Please input password!" }]}>
+          <Input.Password
+            id="password"
+            type="password"
+            value={password}
+            name="Password"
+            onChange={({ target }) => {
+              setPass(target.value);
+            }}
+          ></Input.Password>
+        </Form.Item>
+        <Button id="loginbutton" type='primary' htmlType="submit">
+          Login
+        </Button>
+        </Space>
+      </Form>
+    </div>
+  );
+};
 
-  }
-
-  return(
-    <form className = 'login' onSubmit = {submitForm}>
-      <p>Name
-        <input id = 'username'type = 'text' value = {username} name = "Username" onChange = {({ target }) => {setUsername(target.value)}}></input>
-      </p>
-      <p>Password
-        <input id = 'password' type = 'password' value= {password} name= 'Password' onChange={({ target }) => {setPass(target.value)}}></input>
-      </p>
-      <button id = 'loginbutton' type = 'submit'>Login</button>
-    </form>
-  )
-}
-
-export default LoginForm
+export default LoginForm;
